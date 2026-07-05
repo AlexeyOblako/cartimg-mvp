@@ -77,4 +77,19 @@ curl "http://localhost:3001/api/bookings/phone/%2B70000000000"
 
 ## Промпты
 
-<!-- Раздел заполняется вручную -->
+Реализуй Фичу 3: просмотр истории бронирований по телефону.
+
+Backend (backend/src/routes/bookings.js):
+- Добавь GET /:phone — возвращает все бронирования клиента с информацией о заезде (JOIN sessions)
+- Формат ответа: [{id, session_id, session_date, session_time, karts_count, status, customer_name}]
+
+Frontend:
+- src/services/api.js — добавь getBookingsByPhone(phone)
+- src/components/BookingHistory.jsx — компонент:
+    * Поле ввода телефона + кнопка "Найти"
+    * Список бронирований: дата, время, количество картов, статус
+    * Показывает "Ничего не найдено" если пусто
+- Подключи в App.jsx
+
+
+ВАЖНО: Используй JOIN в SQL запросе.

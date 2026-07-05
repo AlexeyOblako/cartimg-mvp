@@ -127,4 +127,27 @@ curl -X POST http://localhost:3001/api/bookings \
 
 ## Промпты
 
-<!-- Раздел заполняется вручную -->
+Реализуй Фичу 2: бронирование заезда.
+
+Backend (backend/src/routes/bookings.js):
+- POST / — принимает {session_id, customer_name, customer_phone, karts_count}
+- Логика:
+    1. Проверить, что заезд существует (404 если нет)
+    2. Проверить, что available_karts >= karts_count (400 если нет)
+    3. Создать запись в bookings
+    4. Уменьшить available_karts в sessions
+    5. Вернуть {id, session_id, customer_name, status: 'active', message}
+- Подключи роутер в src/index.js
+
+Frontend:
+- src/services/api.js — добавь createBooking(data)
+- src/components/BookingForm.jsx — форма с полями: имя, телефон, количество картов
+    * Отправляет POST на /api/bookings
+    * Показывает ошибки (красным текстом)
+    * Очищает форму после успеха
+    * Принимает sessionId как prop
+- Обнови SessionList.jsx — рядом с каждым заездом кнопка "Забронировать", которая показывает BookingForm
+- Обнови App.jsx
+
+
+ВАЖНО: Обработка ошибок должна быть корректной (try/catch, status codes).

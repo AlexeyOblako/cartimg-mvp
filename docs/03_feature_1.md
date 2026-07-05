@@ -76,4 +76,21 @@ curl http://localhost:3001/api/sessions
 
 ## Промпты
 
-<!-- Раздел заполняется вручную -->
+Реализуй Фичу 1: просмотр списка заездов.
+
+Backend (backend/src/routes/sessions.js):
+- GET / — возвращает все заезды из sessions, отсортированные по date, time
+- Подключи роутер в src/index.js через app.use('/api/sessions', sessionsRouter)
+
+Frontend:
+- src/services/api.js — добавь функцию getSessions()
+- src/components/SessionList.jsx — компонент, который:
+    * загружает заезды через useEffect при монтировании
+    * отображает список: дата, время, свободные места, цена
+    * показывает "Загрузка..." и "Нет заездов"
+- src/App.jsx — подключи SessionList
+
+Также добавь в backend/src/models/database.js сидер: при первом запуске, если таблица sessions пустая, добавь 3-5 тестовых заездов на будущие даты.
+
+
+ВАЖНО: Код должен работать. Проверь, что нет ошибок импорта.

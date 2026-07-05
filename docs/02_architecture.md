@@ -166,4 +166,8 @@ cartimg-mvp/
 
 ## Промпты
 
-<!-- Раздел заполняется вручную -->
+Ты — архитектор ПО. На основе User Stories из docs/01_analysis.md спроектируй архитектуру MVP.
+
+Также обнови backend/src/models/database.js — добавь в initDatabase() создание таблиц sessions и bookings по схеме.
+
+ВАЖНО: Пиши на русском. Все SQL-запросы должны быть рабочими.
