@@ -3,14 +3,28 @@ const router = express.Router();
 const db = require('../models/database');
 
 router.get('/', (req, res) => {
-  db.all('SELECT * FROM sessions ORDER BY created_at DESC', [], (err, rows) => {
+  const sql = `
+    SELECT s.*, s.max_participants - IFNULL(SUM(b.participants), 0) AS available_places
+    FROM sessions s
+    LEFT JOIN bookings b ON b.session_id = s.id AND b.status = 'confirmed'
+    GROUP BY s.id
+    ORDER BY s.date ASC, s.time ASC
+  `;
+  db.all(sql, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
 router.get('/:id', (req, res) => {
-  db.get('SELECT * FROM sessions WHERE id = ?', [req.params.id], (err, row) => {
+  const sql = `
+    SELECT s.*, s.max_participants - IFNULL(SUM(b.participants), 0) AS available_places
+    FROM sessions s
+    LEFT JOIN bookings b ON b.session_id = s.id AND b.status = 'confirmed'
+    WHERE s.id = ?
+    GROUP BY s.id
+  `;
+  db.get(sql, [req.params.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: 'Session not found' });
     res.json(row);
@@ -18,13 +32,13 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { name, description, price, duration_minutes, max_participants } = req.body;
-  if (!name || price == null || !duration_minutes || !max_participants) {
-    return res.status(400).json({ error: 'Missing required fields: name, price, duration_minutes, max_participants' });
+  const { name, description, price, duration_minutes, max_participants, date, time } = req.body;
+  if (!name || price == null || !duration_minutes || !max_participants || !date || !time) {
+    return res.status(400).json({ error: 'Missing required fields: name, price, duration_minutes, max_participants, date, time' });
   }
   db.run(
-    'INSERT INTO sessions (name, description, price, duration_minutes, max_participants) VALUES (?, ?, ?, ?, ?)',
-    [name, description, price, duration_minutes, max_participants],
+    'INSERT INTO sessions (name, description, price, duration_minutes, max_participants, date, time) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [name, description, price, duration_minutes, max_participants, date, time],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.status(201).json({ id: this.lastID });
@@ -33,10 +47,10 @@ router.post('/', (req, res) => {
 });
 
 router.put('/:id', (req, res) => {
-  const { name, description, price, duration_minutes, max_participants } = req.body;
+  const { name, description, price, duration_minutes, max_participants, date, time } = req.body;
   db.run(
-    'UPDATE sessions SET name = ?, description = ?, price = ?, duration_minutes = ?, max_participants = ? WHERE id = ?',
-    [name, description, price, duration_minutes, max_participants, req.params.id],
+    'UPDATE sessions SET name = ?, description = ?, price = ?, duration_minutes = ?, max_participants = ?, date = ?, time = ? WHERE id = ?',
+    [name, description, price, duration_minutes, max_participants, date, time, req.params.id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Session not found' });

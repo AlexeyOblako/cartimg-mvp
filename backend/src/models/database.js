@@ -20,6 +20,8 @@ function initDatabase() {
         price REAL NOT NULL,
         duration_minutes INTEGER NOT NULL,
         max_participants INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
         created_at TEXT DEFAULT (datetime('now'))
       )
     `);
@@ -31,13 +33,36 @@ function initDatabase() {
         customer_name TEXT NOT NULL,
         customer_phone TEXT NOT NULL,
         participants INTEGER NOT NULL,
-        booking_date TEXT NOT NULL,
-        booking_time TEXT NOT NULL,
         status TEXT DEFAULT 'confirmed',
         created_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (session_id) REFERENCES sessions(id)
       )
     `);
+
+    db.get('SELECT COUNT(*) AS cnt FROM sessions', [], (err, row) => {
+      if (err) {
+        console.error('Seed check failed:', err.message);
+        return;
+      }
+      if (row.cnt === 0) {
+        const seeds = [
+          ['Спринт 10 мин', 'Быстрый заезд для начинающих', 1500, 10, 8, '2026-07-10', '14:00'],
+          ['Спринт 10 мин', 'Быстрый заезд для начинающих', 1500, 10, 8, '2026-07-10', '15:00'],
+          ['Гонка 20 мин', 'Полноценная гонка для опытных', 2500, 20, 10, '2026-07-10', '16:00'],
+          ['Драйв 30 мин', 'Для опытных пилотов', 3500, 30, 6, '2026-07-11', '14:00'],
+          ['Супер-спринт 15 мин', 'Ускоренный формат', 2000, 15, 8, '2026-07-11', '15:00'],
+        ];
+
+        const stmt = db.prepare(
+          'INSERT INTO sessions (name, description, price, duration_minutes, max_participants, date, time) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+        for (const s of seeds) {
+          stmt.run(s);
+        }
+        stmt.finalize();
+        console.log('Seeded 5 test sessions');
+      }
+    });
   });
 }
 
