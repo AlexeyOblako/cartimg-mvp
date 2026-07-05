@@ -19,7 +19,7 @@ function initDatabase() {
         description TEXT,
         price REAL NOT NULL,
         duration_minutes INTEGER NOT NULL,
-        max_participants INTEGER NOT NULL,
+        available_karts INTEGER NOT NULL,
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         created_at TEXT DEFAULT (datetime('now'))
@@ -32,8 +32,8 @@ function initDatabase() {
         session_id INTEGER NOT NULL,
         customer_name TEXT NOT NULL,
         customer_phone TEXT NOT NULL,
-        participants INTEGER NOT NULL,
-        status TEXT DEFAULT 'confirmed',
+        karts_count INTEGER NOT NULL,
+        status TEXT DEFAULT 'active',
         created_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (session_id) REFERENCES sessions(id)
       )
@@ -54,7 +54,7 @@ function initDatabase() {
         ];
 
         const stmt = db.prepare(
-          'INSERT INTO sessions (name, description, price, duration_minutes, max_participants, date, time) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO sessions (name, description, price, duration_minutes, available_karts, date, time) VALUES (?, ?, ?, ?, ?, ?, ?)'
         );
         for (const s of seeds) {
           stmt.run(s);

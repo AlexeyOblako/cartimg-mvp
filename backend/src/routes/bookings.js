@@ -5,7 +5,8 @@ const db = require('../models/database');
 router.get('/', (req, res) => {
   const { phone } = req.query;
   let sql = `
-    SELECT bookings.*, sessions.name AS session_name, sessions.date AS session_date, sessions.time AS session_time
+    SELECT bookings.*, sessions.name AS session_name,
+           sessions.date AS session_date, sessions.time AS session_time
     FROM bookings
     LEFT JOIN sessions ON bookings.session_id = sessions.id
   `;
@@ -26,7 +27,8 @@ router.get('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
   db.get(
-    `SELECT bookings.*, sessions.name AS session_name, sessions.date AS session_date, sessions.time AS session_time
+    `SELECT bookings.*, sessions.name AS session_name,
+            sessions.date AS session_date, sessions.time AS session_time
      FROM bookings
      LEFT JOIN sessions ON bookings.session_id = sessions.id
      WHERE bookings.id = ?`,
@@ -40,44 +42,76 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { session_id, customer_name, customer_phone, participants } = req.body;
-  if (!session_id || !customer_name || !customer_phone || !participants) {
-    return res.status(400).json({ error: 'Missing required fields: session_id, customer_name, customer_phone, participants' });
+  const { session_id, customer_name, customer_phone, karts_count } = req.body;
+
+  if (!session_id || !customer_name || !customer_phone || karts_count == null) {
+    return res.status(400).json({
+      error: 'Missing required fields: session_id, customer_name, customer_phone, karts_count',
+    });
   }
 
-  db.get('SELECT max_participants FROM sessions WHERE id = ?', [session_id], (err, session) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!session) return res.status(404).json({ error: 'Session not found' });
+  db.serialize(() => {
+    db.run('BEGIN TRANSACTION');
 
-    db.get(
-      "SELECT IFNULL(SUM(participants), 0) AS booked FROM bookings WHERE session_id = ? AND status = 'confirmed'",
-      [session_id],
-      (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-
-        const available = session.max_participants - row.booked;
-        if (participants > available) {
-          return res.status(400).json({ error: `Not enough places. Available: ${available}, requested: ${participants}` });
-        }
-
-        db.run(
-          'INSERT INTO bookings (session_id, customer_name, customer_phone, participants) VALUES (?, ?, ?, ?)',
-          [session_id, customer_name, customer_phone, participants],
-          function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.status(201).json({ id: this.lastID });
-          }
-        );
+    db.get('SELECT * FROM sessions WHERE id = ?', [session_id], (err, session) => {
+      if (err) {
+        db.run('ROLLBACK');
+        return res.status(500).json({ error: err.message });
       }
-    );
+
+      if (!session) {
+        db.run('ROLLBACK');
+        return res.status(404).json({ error: 'Заезд не найден' });
+      }
+
+      if (session.available_karts < karts_count) {
+        db.run('ROLLBACK');
+        return res.status(400).json({
+          error: `Нет свободных картов. Доступно: ${session.available_karts}, запрошено: ${karts_count}`,
+        });
+      }
+
+      db.run(
+        'INSERT INTO bookings (session_id, customer_name, customer_phone, karts_count) VALUES (?, ?, ?, ?)',
+        [session_id, customer_name, customer_phone, karts_count],
+        function (err) {
+          if (err) {
+            db.run('ROLLBACK');
+            return res.status(500).json({ error: err.message });
+          }
+
+          const bookingId = this.lastID;
+
+          db.run(
+            'UPDATE sessions SET available_karts = available_karts - ? WHERE id = ?',
+            [karts_count, session_id],
+            function (err) {
+              if (err) {
+                db.run('ROLLBACK');
+                return res.status(500).json({ error: err.message });
+              }
+
+              db.run('COMMIT');
+              res.status(201).json({
+                id: bookingId,
+                session_id,
+                customer_name,
+                status: 'active',
+                message: 'Бронь подтверждена',
+              });
+            }
+          );
+        }
+      );
+    });
   });
 });
 
 router.put('/:id', (req, res) => {
-  const { session_id, customer_name, customer_phone, participants, status } = req.body;
+  const { session_id, customer_name, customer_phone, karts_count, status } = req.body;
   db.run(
-    'UPDATE bookings SET session_id = ?, customer_name = ?, customer_phone = ?, participants = ?, status = ? WHERE id = ?',
-    [session_id, customer_name, customer_phone, participants, status, req.params.id],
+    'UPDATE bookings SET session_id = ?, customer_name = ?, customer_phone = ?, karts_count = ?, status = ? WHERE id = ?',
+    [session_id, customer_name, customer_phone, karts_count, status, req.params.id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Booking not found' });

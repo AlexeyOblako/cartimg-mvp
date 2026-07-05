@@ -5,5 +5,6 @@ const api = axios.create({
 });
 
 export const getSessions = () => api.get('/sessions');
+export const createBooking = (data) => api.post('/bookings', data);
 
 export default api;

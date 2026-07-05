@@ -1,5 +1,4 @@
 import SessionList from './components/SessionList';
-import BookingForm from './components/BookingForm';
 import BookingHistory from './components/BookingHistory';
 import './App.css';
 
@@ -9,12 +8,8 @@ function App() {
       <h1>🏎️ Carting Center</h1>
 
       <section style={{ marginBottom: '3rem' }}>
-        <h2>Sessions</h2>
+        <h2>Заезды</h2>
         <SessionList />
-      </section>
-
-      <section style={{ marginBottom: '3rem' }}>
-        <BookingForm />
       </section>
 
       <section>

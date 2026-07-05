@@ -48,7 +48,7 @@ export default function BookingHistory() {
               <th>Заезд</th>
               <th>Дата</th>
               <th>Время</th>
-              <th>Участников</th>
+              <th>Картов</th>
               <th>Статус</th>
             </tr>
           </thead>
@@ -58,7 +58,7 @@ export default function BookingHistory() {
                 <td>{b.session_name}</td>
                 <td>{b.session_date}</td>
                 <td>{b.session_time}</td>
-                <td>{b.participants}</td>
+                <td>{b.karts_count}</td>
                 <td>{b.status}</td>
               </tr>
             ))}

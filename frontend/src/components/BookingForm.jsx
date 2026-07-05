@@ -1,19 +1,14 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api';
+import { useState } from 'react';
+import { createBooking } from '../services/api';
 
-export default function BookingForm() {
-  const [sessions, setSessions] = useState([]);
+export default function BookingForm({ sessionId, sessionName, onSuccess, onCancel }) {
   const [form, setForm] = useState({
-    session_id: '',
     customer_name: '',
     customer_phone: '',
-    participants: 1,
+    karts_count: 1,
   });
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    api.get('/sessions').then((res) => setSessions(res.data)).catch(console.error);
-  }, []);
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -21,34 +16,74 @@ export default function BookingForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setSubmitting(true);
     try {
-      await api.post('/bookings', form);
-      setMessage('Бронь подтверждена!');
-      setForm({ session_id: '', customer_name: '', customer_phone: '', participants: 1 });
+      await createBooking({
+        session_id: sessionId,
+        customer_name: form.customer_name,
+        customer_phone: form.customer_phone,
+        karts_count: Number(form.karts_count),
+      });
+      setForm({ customer_name: '', customer_phone: '', karts_count: 1 });
+      onSuccess && onSuccess();
     } catch (err) {
-      setMessage('Ошибка: ' + (err.response?.data?.error || err.message));
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-      <h3>Забронировать заезд</h3>
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        marginTop: '0.5rem',
+        padding: '0.75rem',
+        border: '1px solid #4caf50',
+        borderRadius: 6,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.4rem',
+        fontSize: '0.9rem',
+      }}
+    >
+      <strong>Бронирование: {sessionName}</strong>
 
-      <select name="session_id" value={form.session_id} onChange={handleChange} required>
-        <option value="">-- Выберите заезд --</option>
-        {sessions.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name} — {s.date} {s.time} — {s.price} ₽
-          </option>
-        ))}
-      </select>
+      <input
+        name="customer_name"
+        placeholder="Ваше имя"
+        value={form.customer_name}
+        onChange={handleChange}
+        required
+      />
+      <input
+        name="customer_phone"
+        placeholder="Телефон (например +79991234567)"
+        value={form.customer_phone}
+        onChange={handleChange}
+        required
+      />
+      <input
+        name="karts_count"
+        type="number"
+        min={1}
+        placeholder="Количество картов"
+        value={form.karts_count}
+        onChange={handleChange}
+        required
+      />
 
-      <input name="customer_name" placeholder="Ваше имя" value={form.customer_name} onChange={handleChange} required />
-      <input name="customer_phone" placeholder="Телефон (например +79991234567)" value={form.customer_phone} onChange={handleChange} required />
-      <input name="participants" type="number" min={1} placeholder="Количество участников" value={form.participants} onChange={handleChange} required />
+      {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
 
-      <button type="submit">Забронировать</button>
-      {message && <p>{message}</p>}
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button type="submit" disabled={submitting}>
+          {submitting ? 'Бронирую...' : 'Забронировать'}
+        </button>
+        <button type="button" onClick={onCancel}>
+          Отмена
+        </button>
+      </div>
     </form>
   );
 }
