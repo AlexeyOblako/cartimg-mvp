@@ -3,26 +3,35 @@ const router = express.Router();
 const db = require('../models/database');
 
 router.get('/', (req, res) => {
-  const { phone } = req.query;
-  let sql = `
-    SELECT bookings.*, sessions.name AS session_name,
-           sessions.date AS session_date, sessions.time AS session_time
-    FROM bookings
-    LEFT JOIN sessions ON bookings.session_id = sessions.id
-  `;
-  const params = [];
+  db.all(
+    `SELECT bookings.*, sessions.name AS session_name,
+            sessions.date AS session_date, sessions.time AS session_time
+     FROM bookings
+     LEFT JOIN sessions ON bookings.session_id = sessions.id
+     ORDER BY sessions.date DESC, sessions.time DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
 
-  if (phone) {
-    sql += ' WHERE bookings.customer_phone = ?';
-    params.push(phone);
-  }
-
-  sql += ' ORDER BY sessions.date DESC, sessions.time DESC';
-
-  db.all(sql, params, (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+router.get('/phone/:phone', (req, res) => {
+  db.all(
+    `SELECT bookings.id, bookings.session_id,
+            sessions.date AS session_date, sessions.time AS session_time,
+            bookings.karts_count, bookings.status, bookings.customer_name
+     FROM bookings
+     LEFT JOIN sessions ON bookings.session_id = sessions.id
+     WHERE bookings.customer_phone = ?
+     ORDER BY sessions.date DESC, sessions.time DESC`,
+    [req.params.phone],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
 });
 
 router.get('/:id', (req, res) => {
