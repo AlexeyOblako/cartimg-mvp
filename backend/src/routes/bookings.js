@@ -59,6 +59,16 @@ router.post('/', (req, res) => {
     });
   }
 
+  const nameRegex = /^[a-zA-Zа-яА-ЯёЁ\s\-]{2,}$/;
+  if (!nameRegex.test(customer_name)) {
+    return res.status(400).json({ error: 'Имя должно содержать только буквы (минимум 2 символа). Пример: Иван Иванов' });
+  }
+
+  const phoneRegex = /^\d{11}$/;
+  if (!phoneRegex.test(customer_phone)) {
+    return res.status(400).json({ error: 'Телефон должен содержать ровно 11 цифр. Пример: 88005553312' });
+  }
+
   db.serialize(() => {
     db.run('BEGIN TRANSACTION');
 

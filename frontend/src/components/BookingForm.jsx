@@ -17,6 +17,20 @@ export default function BookingForm({ sessionId, sessionName, onSuccess, onCance
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    const nameRegex = /^[a-zA-Zа-яА-ЯёЁ\s\-]{2,}$/;
+    const phoneRegex = /^\d{11}$/;
+
+    if (!nameRegex.test(form.customer_name)) {
+      setError('Имя должно содержать только буквы (минимум 2 символа)');
+      return;
+    }
+
+    if (!phoneRegex.test(form.customer_phone)) {
+      setError('Телефон должен содержать ровно 11 цифр (например, 88005553312)');
+      return;
+    }
+
     setSubmitting(true);
     try {
       await createBooking({
@@ -59,7 +73,7 @@ export default function BookingForm({ sessionId, sessionName, onSuccess, onCance
       />
       <input
         name="customer_phone"
-        placeholder="Телефон (например +79991234567)"
+        placeholder="Телефон (11 цифр, например 88005553312)"
         value={form.customer_phone}
         onChange={handleChange}
         required
